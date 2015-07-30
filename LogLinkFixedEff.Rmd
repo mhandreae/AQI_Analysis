@@ -42,7 +42,7 @@ str(prov1_AQI_4_14)
 
 ```
 
-## Logistic Model 2 Link : log with glm
+# Regression Model:  glm
 
 We try to fit a logistic regression model with the a **log** link with the 
 
@@ -58,11 +58,13 @@ We are unable to fit a log link model with all predictors, because we get the er
   * supply starting values for all coefficients, (factors need one for each level)
 * consider using the package *biglm*, specifically for log link with large data set
 
-## Building Loglink with starting values 
+# Building models with starting values 
 
 Use estimated coefficients as **starting values** for increasingly complex model with one additional predictor per step. Starting values for additional predictors are set to zero.
 
-### Estimate fit_log0 with **four** predictors: 
+## Log Link models
+
+### Estimate fit_log0 with **three** predictors: 
 
 formula0 <- ond ~ pay +age_group +sex
 
@@ -83,7 +85,7 @@ OR <- exp(coef(fit_log0)) # exponentiated coefficients
 kable(data.frame(OR, p_values), digits = 3, caption = "Results log0")
 ```
 
-### Estimate fit_log1 with **five** predictors: 
+### Estimate fit_log1 with **four** predictors: 
 
 formula1 <- ond ~ pay +age_group +sex +ASA
 
@@ -103,7 +105,7 @@ OR <- exp(coef(fit_log1)) # exponentiated coefficients
 kable(data.frame(OR, p_values), digits = 3 , caption = "Results log1")
 ```
 
-### Estimate fit_log2 with **six** predictors: 
+### Estimate fit_log2 with **five** predictors: 
 
 formula2 <- ond ~ pay +age_group +sex +ASA +anes_type 
 
@@ -122,7 +124,7 @@ OR <- exp(coef(fit_log2)) # exponentiated coefficients
 kable(data.frame(OR, p_values), digits = 3, , caption = "Results log2")
 ```
 
-### Estimate fit_log3 with **seven** predictors: 
+### Estimate fit_log3 with **six** predictors: 
 
 formula3 <- ond ~ pay +age_group +sex +ASA +anes_type +duration
 
@@ -191,12 +193,103 @@ fit_log4 <- glm(formula4,
 3: step size truncated due to divergence 
 4: step size truncated due to divergence 
 5: glm.fit: algorithm did not converge*
-  
-  ```{r eval=FALSE}
-p_values <- summary.glm((fit_log))$coefficient[,4]
-OR <- exp(coef(fit_log)) # exponentiated coefficients
-CI_fitlog<- confint(fit_log) # 95% CI for the coefficients
-kable(data.frame(OR, exp(CI_fitlog), 
-                 p_values), digits = 3)
+
+## Logit Link models
+
+
+### Estimate fit_log0 with **three** predictors: 
+
+formula0 <- ond ~ pay +age_group +sex
+
+```{r, logit0, echo=TRUE}
+
+formula0 <- ond ~ pay +age_group +sex
+
+fit_logit0 <- glm(formula0, 
+                family = binomial(link = "logit"), 
+                data = fullAQI_4_14)
 ```
 
+
+```{r logit0_results, eval=TRUE}
+summary(fit_logit0)
+```
+
+### Estimate fit_log1 with **four** predictors: 
+
+formula1 <- ond ~ pay +age_group +sex +ASA
+
+```{r, logit1, echo=TRUE}
+formula1 <- ond ~ pay +age_group +sex +ASA # one additonal predictor ASA
+
+fit_logit1 <- glm(formula1, 
+                family = binomial(link = "logit"), 
+                data = fullAQI_4_14, start = c(coef(fit_logit0),rep(0,5) ))
+# start = c( coef(fit_log0), rep(0,5) ) ### For each level of ASA one start value!
+```
+
+```{r logit1_results, eval=TRUE}
+summary(fit_logit1)
+```
+
+### Estimate fit_log2 with **five** predictors: 
+
+formula2 <- ond ~ pay +age_group +sex +ASA +anes_type 
+
+```{r, logit2, echo=TRUE}
+formula2 <- ond ~ pay +age_group +sex +ASA +anes_type 
+
+fit_logit2 <- glm(formula2, 
+                family = binomial(link = "logit"), 
+                data = fullAQI_4_14, start = c(coef(fit_logit1),rep(0,5) ))
+```
+
+```{r logit2_results, eval=TRUE}
+summary(fit_logit2)
+```
+
+### Estimate fit_log3 with **six** predictors: 
+
+formula3 <- ond ~ pay +age_group +sex +ASA +anes_type +duration
+
+```{r, logit3, echo=TRUE}
+formula3 <- ond ~ pay +age_group +sex +ASA +anes_type +duration
+
+fit_logit3 <- glm(formula3, 
+                family = binomial(link = "logit"), 
+                data = fullAQI_4_14, start = c(coef(fit_logit2),rep(0,1) ))
+```
+
+```{r logit3_results, eval=TRUE}
+summary(fit_logit3)
+```
+
+### Check dispersion for fit_log3
+
+```{r checkdispersion_logit, echo=TRUE, eval=TRUE}
+
+fit_logit3quasi <- glm(formula3, 
+                     family = quasibinomial(link = "logit"), 
+                     data = fullAQI_4_14, start = c(coef(fit_logit2),rep(0,1) ))
+summary(fit_logit3quasi)
+```
+
+##### Result
+
+(Dispersion parameter for quasibinomial family taken to be 1.000397)
+
+### Estimate fit_log4 with **seven** predictors: 
+
+formula4 <- ond ~ pay +age_group +sex +ASA +anes_type +duration +practice
+
+```{r, logit4, echo=TRUE, eval=TRUE}
+formula4 <- ond ~ pay +age_group +sex +ASA +anes_type +duration +practice
+
+fit_logit4 <- glm(formula4, 
+                family = binomial(link = "logit"), 
+                data = fullAQI_4_14, start = c(coef(fit_logit3), rep (0,3) ) )
+summary(fit_logit4)
+```
+
+**Convergence**
+  
