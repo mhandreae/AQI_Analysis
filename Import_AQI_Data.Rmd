@@ -1,0 +1,721 @@
+---
+title: "Import AQI data"
+author: "Michael Andreae"
+date: "Friday, June 19, 2015"
+output: pdf_document
+---
+
+# Insurance status predicts antiemetic use 
+We investigate the Hypothesis that socioeconomic status (**SES**) predicts anesthesia quality.
+
+We use either insurance status or median income in patient address zip code as markers of socioeconomic status and  antiemetic use as marker of anesthesia quailty. We use the population in the Public Use File *NACOR*, the National Anesthesia Clinical Outcome Registry, of the Anesthesia Quality Institute *AQI* with electronic anesthesia records recording antiemetic use.
+
+```{r, packages, message=FALSE, echo=FALSE, warning=FALSE}
+library(knitr) # required to set options in Markdown R
+```
+
+
+```{r, global_options, echo=FALSE}
+
+# set the directory to the project directory
+setwd("C:/Users/Micheal/Dropbox/Professional/AQI/AQI_RegressionAnalysis")
+
+# set options
+opts_chunk$set(fig.width=6, fig.height=4, fig.path='Figs/',
+               echo=FALSE, warning=FALSE, message=FALSE)
+```
+
+# Import Data and generate clean data files
+
+we load the original dataset and save as it as *PUF_Q4_2013.Rdata* 
+
+## Original Data
+
+```{r, eval=FALSE, echo=TRUE}
+# run only once
+PUF_Q4_2013 <- read.csv("Analysis/Data/PUF_Q4_2013_Antimetic.csv")
+save(PUF_Q4_2013, file="Analysis/Data/PUF_Q4_2013.Rdata")
+```
+
+## Load Rdata AQI raw dataset *PUF_Q4_2013.Rdata* 
+
+```{r, echo=TRUE}
+rm(list = ls())
+load("Analysis/Data/PUF_Q4_2013.Rdata")
+```
+
+## Median income versus insurance status as predictors of socioeconomic status
+
+### Median income
+
+```{r}
+summary(PUF_Q4_2013$Income_MedianR)
+hist(PUF_Q4_2013$Income_MedianR)
+n_Income_MedianRNA <-sum(is.na(PUF_Q4_2013$Income_MedianR))
+```
+
+A predictor of socioeconomic status could be the median income in the zip code of the patients home address, coded *Income_MedicanR* , a `r class(PUF_Q4_2013$Income_MedianR)` with `r n_Income_MedianRNA` NA values. We will generate a separate file with median income as predictor at the bottom. 
+
+
+### Insurance status
+
+```{r}
+PUF_Q4_2013$Payment[PUF_Q4_2013$Payment == ""] <- NA
+n_PaymentNA <-sum(is.na(PUF_Q4_2013$Payment))
+
+PUF_Q4_2013$Payment <- droplevels(PUF_Q4_2013$Payment)
+levels(PUF_Q4_2013$Payment)[1] <- "Commercial"
+```
+
+The predictor insurance status (*Payment*) is coded in `r length(levels(PUF_Q4_2013$Payment))` levels as `r levels(PUF_Q4_2013$Payment)`, and has `r n_PaymentNA` cases with without insurance information, *NA*
+
+### Missing data on insurance status and median income
+
+```{r}
+PUF_Q4_2013$Payment[PUF_Q4_2013$Payment == ""] <- NA
+OverlapPayment_Income_MedianR <- table(is.na(PUF_Q4_2013$Payment),
+                                       is.na(PUF_Q4_2013$Income_MedianR))
+colnames(OverlapPayment_Income_MedianR) <- c("Observed Income", "NA")
+rownames(OverlapPayment_Income_MedianR) <- c("Observed Insurance", "NA")
+
+kable(OverlapPayment_Income_MedianR)
+```
+
+There is considerable overlap in the missingness of information on *Income_MedicanR* and insurance status coded as *Payment*. In other words, data are missing in different subpopulatons for *Income_MedianR* and *Payment*. This makes it feasible to test our hypothesis in two different subsets of the NACOR database
+
+* The population with complete data on median income at patient address, using *Income_MedianR* as predictor for poor healthcare quality. 
+
+* The population with complete data on insurance status, using insurance status coded as *Payment* as predictor for poor healthcare quality. 
+
+**Summary:**
+We generate several clean data files.
+The first set of files uses insurance status as predictor;
+the second set of files uses median income (in patient address zip code) as predictor.
+
+
+# Predictor: insurance status
+
+We generate the first set of files; We limit the analysis on the complete cases with *Payment* information on insurance status.
+
+```{r}
+
+
+PUF_Q4_2013 <- PUF_Q4_2013[complete.cases(PUF_Q4_2013$Payment),]
+
+PUF_Q4_2013$Payment <- droplevels(PUF_Q4_2013$Payment)
+levels(PUF_Q4_2013$Payment)[1] <- "Commercial"
+```
+
+The predictor insurance status (*Payment*) is coded in `r length(levels(PUF_Q4_2013$Payment))` levels as `r levels(PUF_Q4_2013$Payment)`, after we removed `r n_PaymentNA` cases without insurance information, (orginally coded as ""), with `r length(PUF_Q4_2013$Payment)` unique cases remaining.
+
+## Outcome variables: antiemetic administration
+
+We focus on the antiemetics *ondansetron*, *dexamethason* and *droperidol*, the only agents with convincing evidence for effect. 
+
+```{r}
+### Ondansetron
+PUF_Q4_2013$ondansetron <- 
+  as.factor(PUF_Q4_2013$Antiemetics_ondansetron)
+levels(PUF_Q4_2013$ondansetron) <- c("no Ondan", "Ondan")
+```
+
+
+```{r}
+### Dexamethason
+PUF_Q4_2013$dexamethason <- 
+  as.factor(PUF_Q4_2013$Antiemetics_dexamethason)
+levels(PUF_Q4_2013$dexamethason) <- c("no Dex", "Dex")
+```
+
+
+```{r}
+### Droperidol
+PUF_Q4_2013$droperidol <- 
+  as.factor(PUF_Q4_2013$Antiemetics_droperidol)
+levels(PUF_Q4_2013$droperidol) <- c("no Drope", "Drope")
+```
+
+```{r}
+### Ondansetron or Dexamethason
+PUF_Q4_2013$ondan_dex_either <- 
+  as.factor((PUF_Q4_2013$Antiemetics_ondansetron == 1) | (PUF_Q4_2013$Antiemetics_dexamethason ==1))
+levels(PUF_Q4_2013$ondan_dex_either) <- c("neither", "either")
+
+kable(table(PUF_Q4_2013$ondansetron, 
+            PUF_Q4_2013$dexamethason),
+            caption = "Cases with Ondansetron versus Dexamethason")
+
+kable(table(PUF_Q4_2013$ondansetron, 
+            PUF_Q4_2013$droperidol),
+            caption = "Cases with Ondansetron versus Droperidol")
+
+kable(table(PUF_Q4_2013$dexamethason, 
+            PUF_Q4_2013$droperidol),
+            caption = "Cases with Dexamethason versus Droperidol")
+```
+
+The antiemetics *ondansetron* and *dexamethason* were sometimes administered together. This is coded in *ondan_dex_either*
+
+## Potential confounders and other variables
+
+### practice ID versus facility ID
+
+```{r}
+attach(PUF_Q4_2013)
+kable(table(facilityID,practiceID))
+```
+
+The table of facility ID versus practice ID suggests that five practices have only one facility ID and one practice (=5013437) has three (sub) facilities. We will simplify by using practice ID, which has no NA.
+
+```{r}
+PUF_Q4_2013$practice <- as.factor(PUF_Q4_2013$practiceID)
+levels(PUF_Q4_2013$practice) <- c("A", "B", "C", "D")
+```
+
+We recode the practices to A through D to prevent reidentification.
+
+### case_duration_minutes
+
+```{r, echo=TRUE}
+PUF_Q4_2013$case_duration_minutes [PUF_Q4_2013$case_duration_minutes == -1] <- NA
+missing <- sum(is.na(PUF_Q4_2013$case_duration_minutes))
+hist(PUF_Q4_2013$case_duration_minutes)
+PUF_Q4_2013 <- PUF_Q4_2013 [complete.cases(PUF_Q4_2013$case_duration_minutes),]
+```
+
+Case duration in minutes (*case_duration_minutes*) is an integer and has `r missing` missing values coded as -1, which we recoded as NA and removed from the dataset, leaving `r dim(PUF_Q4_2013)[1]` unique cases.
+
+### patient age
+
+```{r, echo=TRUE}
+PUF_Q4_2013$patient_age[PUF_Q4_2013$patient_age==-1] <- NA
+hist(PUF_Q4_2013$patient_age, 
+     main = "Histogram of Age Distribution",
+     xlab = "Age in years")
+missing <- sum(patient_age==-1)
+PUF_Q4_2013 <- PUF_Q4_2013[complete.cases(PUF_Q4_2013$patient_age),]
+```
+
+Patient age (*patient_age*) is an integer with a distribution above and has `r missing` missing values coded as -1, which we recoded as NA and removed from the dataset, leaving `r dim(PUF_Q4_2013)[1]` unique cases.
+
+### patient_age_group
+
+```{r, echo=TRUE}
+levels(PUF_Q4_2013$patient_age_group)[2] <- "1-18"
+levels(PUF_Q4_2013$patient_age_group)[1] <- NA
+PUF_Q4_2013$patient_age_group <- factor(PUF_Q4_2013$patient_age_group,
+                levels(PUF_Q4_2013$patient_age_group)[c(2:6,1)])
+missing <- sum(is.na(PUF_Q4_2013$patient_age_group))
+PUF_Q4_2013 <- PUF_Q4_2013[complete.cases(PUF_Q4_2013$patient_age_group),]
+
+```
+
+Patient age group (*patient_age_group*) is a factor with `r length(levels(PUF_Q4_2013$patient_age_group))` levels: `r levels(PUF_Q4_2013$patient_age_group)`; it has `r missing` missing values, leaving `r dim(PUF_Q4_2013)[1]` unique cases.  
+
+(Missing values were initially coded as -1, which we recoded as NA and removed as a level; we corrected the miscoding from "18-Jan"" to "1-18").
+
+### patient_sex
+
+```{r}
+PUF_Q4_2013$patient_sex <- 
+  as.factor(PUF_Q4_2013$patient_sex)
+
+levels(PUF_Q4_2013$patient_sex)[1] <- NA
+levels(PUF_Q4_2013$patient_sex)[1] <- "female"
+levels(PUF_Q4_2013$patient_sex)[2] <- "male"
+missing <- sum(is.na(PUF_Q4_2013$patient_sex))
+PUF_Q4_2013 <- PUF_Q4_2013[complete.cases(PUF_Q4_2013$patient_sex),]
+```
+
+Patient gender (*patient_sex*) is recoded as factor with the two levels `r levels(PUF_Q4_2013$patient_sex)` and `r missing` NAs, which are removed from the dataset, leaving `r dim(PUF_Q4_2013)[1]` unique cases.
+
+### in_or_out_patient
+
+```{r}
+PUF_Q4_2013$in_or_out_patient <- 
+  as.factor(PUF_Q4_2013$in_or_out_patient)
+
+levels(PUF_Q4_2013$in_or_out_patient)[1] <- NA
+levels(PUF_Q4_2013$in_or_out_patient)[1] <- "Outpatient"
+levels(PUF_Q4_2013$in_or_out_patient)[2] <- "Inpatient"
+```
+
+
+in- or outpatient status (*in_or_out_patient*) is recoded as a factor with the two levels `r levels(PUF_Q4_2013$in_or_out_patient)` and `r sum(is.na(PUF_Q4_2013$in_or_out_patient))` NAs, which are too numerous to exclude.
+
+### surgical_cpt code
+
+```{r}
+# load("Analysis/Data/PUF_Q4_2013.Rdata")
+
+PUF_Q4_2013$surgical_cpt <- 
+  as.factor(PUF_Q4_2013$surgical_cpt)
+levels(PUF_Q4_2013$surgical_cpt)[1] <- NA
+missing <- sum(is.na(PUF_Q4_2013$surgical_cpt))
+```
+
+We considered to control with a random effect for *surgical_ctp* code but `r missing` cases do not have a *surgical_ctp* code defined, which are too many to exclude.
+
+### combined_cpt code
+
+```{r}
+# load("Analysis/Data/PUF_Q4_2013.Rdata")
+
+PUF_Q4_2013$combined_cpt <- 
+  as.factor(PUF_Q4_2013$combined_cpt)
+levels(PUF_Q4_2013$combined_cpt)[1] <- NA
+missing <- sum(is.na(PUF_Q4_2013$combined_cpt))
+```
+
+We considered to control with a random effect for *combined_cpt* code but `r missing` cases do not have a *combined_cpt* code defined, which are too many to exclude.
+
+### reported_anesthesia_code
+
+```{r}
+# load("Analysis/Data/PUF_Q4_2013.Rdata")
+
+PUF_Q4_2013$reported_anesthesia_code <- 
+  as.factor(PUF_Q4_2013$reported_anesthesia_code)
+levels(PUF_Q4_2013$reported_anesthesia_code)[1] <- NA
+missing <- sum(is.na(PUF_Q4_2013$reported_anesthesia_code))
+```
+
+We considered to control with a random effect for *reported_anesthesia_code* code but `r missing` cases do not have a *reported_anesthesia_code* code defined, which are too many to exclude.
+
+### primary_anesthesia_type
+
+```{r}
+# load("Analysis/Data/PUF_Q4_2013.Rdata")
+
+PUF_Q4_2013$primary_anesthesia_type <- 
+  as.factor(PUF_Q4_2013$primary_anesthesia_type)
+levels(PUF_Q4_2013$primary_anesthesia_type)[1] <- NA
+levels(PUF_Q4_2013$primary_anesthesia_type) <- c("General", 
+                                                "Neuroaxial", 
+                                                "Regional", 
+                                                "MAC", 
+                                                "Sedation", "Local" , 
+                                                "Other")
+missing <- sum(is.na(PUF_Q4_2013$primary_anesthesia_type))
+PUF_Q4_2013 <- PUF_Q4_2013[complete.cases(PUF_Q4_2013$primary_anesthesia_type),]
+```
+
+*primary_anesthesia-type* is recoded as a factor with  `r length(levels(PUF_Q4_2013$primary_anesthesia_type))` levels [`r levels(PUF_Q4_2013$primary_anesthesia_type)`]. We considered to control with a fixed or a effect for *primary_anesthesia_type* code but `r missing` cases do not have a *primary_anesthesia_type* code defined, which may be too many to exclude.
+
+We did exclude NA leaving us with `r dim(PUF_Q4_2013)[1]` unique cases.
+
+### procedure_status
+
+```{r}
+# load("Analysis/Data/PUF_Q4_2013.Rdata")
+
+PUF_Q4_2013$procedure_status <- 
+  as.factor(PUF_Q4_2013$procedure_status)
+levels(PUF_Q4_2013$procedure_status)[1] <- NA
+levels(PUF_Q4_2013$procedure_status) <- c("Emergency", "Elective")
+missing <- sum(is.na(PUF_Q4_2013$procedure_status))
+```
+
+It would make sense to try to control for *procedure_status*, (which indicates if the case was `r levels(PUF_Q4_2013$procedure_status) [1]` or `r levels(PUF_Q4_2013$procedure_status)[2]`); but `r missing` of the remaining cases do not have a *procedure_status* code defined, which obviously are too many to exclude.
+
+### case_type
+
+```{r}
+# load("Analysis/Data/PUF_Q4_2013.Rdata")
+
+PUF_Q4_2013$case_type <- 
+  as.factor(PUF_Q4_2013$case_type)
+levels(PUF_Q4_2013$case_type)[1] <- NA
+missing <- sum(is.na(PUF_Q4_2013$case_type))
+```
+
+It would make sense to try to control for *case_type*, (which indicates if the case was `r levels(PUF_Q4_2013$case_type)` ..., but `r missing` of the remaining cases do not have a *case_type* code defined, which obviously are too many to exclude.
+
+### asaps_imputed
+
+```{r}
+# load("Analysis/Data/PUF_Q4_2013.Rdata")
+
+PUF_Q4_2013$asaps_imputed <- 
+  as.factor(PUF_Q4_2013$asaps_imputed)
+levels(PUF_Q4_2013$asaps_imputed)[1] <- NA
+missing <- sum(is.na(PUF_Q4_2013$asaps_imputed))
+```
+
+### asaps
+
+```{r}
+# load("Analysis/Data/PUF_Q4_2013.Rdata")
+
+PUF_Q4_2013$asaps <- 
+  as.factor(PUF_Q4_2013$asaps)
+levels(PUF_Q4_2013$asaps)[1] <- NA
+missing <- sum(is.na(PUF_Q4_2013$asaps))
+PUF_Q4_2013 <- PUF_Q4_2013[complete.cases(PUF_Q4_2013$asaps),]
+```
+
+It would make sense to try to control for *asaps* or *asaps_imputed*, (ASA Status, which indicates how sick a patient was, and only `r missing` of the remaining cases do not have an ASA status recorded; so we exclude them, leaving us with `r dim(PUF_Q4_2013)[1]` unique cases with also *asaps* as a predictor.
+
+### prov1
+
+```{r}
+
+PUF_Q4_2013$prov1 <- 
+  as.factor(PUF_Q4_2013$prov1)
+levels(PUF_Q4_2013$prov1)[1] <- NA
+missing <- sum(is.na(PUF_Q4_2013$prov1))
+```
+
+
+It would be great to control for individual provider behavior, to show variability among providers in their propensity to admister antiemetics contingent on insurance status. There are `r length(levels(PUF_Q4_2013$prov1))` different *prov1* levels, I believe they are coding for individual providers. `r missing` of the remaining cases do not have the *prov1*  recorded; if we exclude them, it leaves us with `r dim(PUF_Q4_2013[complete.cases(PUF_Q4_2013$prov1),])[1]` unique cases with provider coded as *prov1* as predictor.
+
+
+## Save cleaned datasets
+
+## Larger dataset **without** provider information in *fullAQI_4_14*
+
+a clean dataframe without provider info but more unique cases is saved as *fullAQI_4_14.Rdata* 
+
+```{r}
+
+attach(PUF_Q4_2013)
+fullAQI_4_14 <- data.frame(ond= ondansetron,
+                         dex= dexamethason,
+                         drop= droperidol,
+                         any = ondan_dex_either,
+                         pay = Payment, 
+                         age = patient_age, 
+                         age_group = patient_age_group, 
+                         sex = patient_sex,
+                         ASA = asaps,
+                         duration = case_duration_minutes,
+                         anes_type = primary_anesthesia_type,
+                         practice = practice)
+
+# all NA are already removed in the previous chunks
+
+save (fullAQI_4_14, file="Analysis/Data/fullAQI_4_14.Rdata")
+str(fullAQI_4_14)
+```
+
+## Smaller dataset **with** provider information in *prov1_AQI_4_14*
+
+a more limited dataset with the individual provider as predictor is saved (after removing cases with *prov1* NA) in *prov1_AQI_4_14.Rdata*
+
+
+```{r}
+# Remove cases with *prov* NA
+PUF_Q4_2013 <- PUF_Q4_2013[complete.cases(PUF_Q4_2013$prov1),]
+
+attach(PUF_Q4_2013)
+prov1_AQI_4_14 <- data.frame(ond= ondansetron,
+                         dex= dexamethason,
+                         drop= droperidol,
+                         any = ondan_dex_either,
+                         pay = Payment, 
+                         age = patient_age, 
+                         age_group = patient_age_group, 
+                         sex = patient_sex,
+                         ASA = asaps,
+                         duration = case_duration_minutes,
+                         anes_type = primary_anesthesia_type,
+                         provider = prov1,
+                         practice = practice)
+
+# all NA are already removed in the previous chunks
+
+save (prov1_AQI_4_14, file="Analysis/Data/prov1_AQI_4_14.Rdata")
+str(prov1_AQI_4_14)
+```
+
+# Predictor: median income
+
+We generate the second set of files; We limit the analysis on the complete cases with *Median_incomeR* information on median income in the patient's home address zip code.
+
+## Load Rdata AQI raw dataset *PUF_Q4_2013.Rdata* 
+
+```{r, echo=TRUE}
+rm(list = ls())
+load("Analysis/Data/PUF_Q4_2013.Rdata")
+summary(PUF_Q4_2013$Income_MedianR)
+n_Income_MedianRNA <-sum(is.na(PUF_Q4_2013$Income_MedianR))
+PUF_Q4_2013 <- PUF_Q4_2013[complete.cases(PUF_Q4_2013$Income_MedianR),]
+```
+
+
+A predictor of socioeconomic status could be the median income in the zip code of the patients home address, coded *Income_MedicanR* , a `r class(PUF_Q4_2013$Income_MedianR)` with `r n_Income_MedianRNA` NA values. We will generate a separate file with median income as predictor at the bottom, after we removed `r n_Income_MedianRNA` cases without information on median income, with `r length(PUF_Q4_2013$Income_MedianR)` unique cases remaining.
+
+## Outcome variables: antiemetic administration
+
+We focus on the antiemetics *ondansetron*, *dexamethason* and *droperidol*, the only agents with convincing evidence for effect. 
+
+```{r}
+### Ondansetron
+PUF_Q4_2013$ondansetron <- 
+  as.factor(PUF_Q4_2013$Antiemetics_ondansetron)
+levels(PUF_Q4_2013$ondansetron) <- c("no Ondan", "Ondan")
+```
+
+
+```{r}
+### Dexamethason
+PUF_Q4_2013$dexamethason <- 
+  as.factor(PUF_Q4_2013$Antiemetics_dexamethason)
+levels(PUF_Q4_2013$dexamethason) <- c("no Dex", "Dex")
+```
+
+
+```{r}
+### Droperidol
+PUF_Q4_2013$droperidol <- 
+  as.factor(PUF_Q4_2013$Antiemetics_droperidol)
+levels(PUF_Q4_2013$droperidol) <- c("no Drope", "Drope")
+```
+
+```{r}
+### Ondansetron or Dexamethason
+PUF_Q4_2013$ondan_dex_either <- 
+  as.factor((PUF_Q4_2013$Antiemetics_ondansetron == 1) | (PUF_Q4_2013$Antiemetics_dexamethason ==1))
+levels(PUF_Q4_2013$ondan_dex_either) <- c("neither", "either")
+
+kable(table(PUF_Q4_2013$ondansetron, 
+            PUF_Q4_2013$dexamethason),
+            caption = "Cases with Ondansetron versus Dexamethason")
+
+kable(table(PUF_Q4_2013$ondansetron, 
+            PUF_Q4_2013$droperidol),
+            caption = "Cases with Ondansetron versus Droperidol")
+
+kable(table(PUF_Q4_2013$dexamethason, 
+            PUF_Q4_2013$droperidol),
+            caption = "Cases with Dexamethason versus Droperidol")
+```
+
+The antiemetics *ondansetron* and *dexamethason* were sometimes administered together. This is coded in *ondan_dex_either*
+
+## Potential confounders and other variables
+
+### practice ID versus facility ID
+
+```{r}
+attach(PUF_Q4_2013)
+kable(table(facilityID,practiceID))
+```
+
+The table of facility ID versus practice ID suggests that only two practices contribute data to this subset.
+
+```{r}
+PUF_Q4_2013$practice <- as.factor(PUF_Q4_2013$practiceID)
+levels(PUF_Q4_2013$practice) <- c("A", "B")
+```
+
+We recode the practices to A through B to prevent reidentification.
+
+### case_duration_minutes
+
+```{r, echo=TRUE}
+PUF_Q4_2013$case_duration_minutes [PUF_Q4_2013$case_duration_minutes == -1] <- NA
+missing <- sum(is.na(PUF_Q4_2013$case_duration_minutes))
+hist(PUF_Q4_2013$case_duration_minutes)
+PUF_Q4_2013 <- PUF_Q4_2013 [complete.cases(PUF_Q4_2013$case_duration_minutes),]
+```
+
+Case duration in minutes (*case_duration_minutes*) is an integer and has `r missing` missing values coded as -1, which we recoded as NA and removed from the dataset, leaving `r dim(PUF_Q4_2013)[1]` unique cases.
+
+### patient age
+
+```{r, echo=TRUE}
+PUF_Q4_2013$patient_age[PUF_Q4_2013$patient_age==-1] <- NA
+hist(PUF_Q4_2013$patient_age, 
+     main = "Histogram of Age Distribution",
+     xlab = "Age in years")
+missing <- sum(patient_age==-1)
+PUF_Q4_2013 <- PUF_Q4_2013[complete.cases(PUF_Q4_2013$patient_age),]
+```
+
+Patient age (*patient_age*) is an integer with a distribution above and has `r missing` missing values coded as -1, which we recoded as NA and removed from the dataset, leaving `r dim(PUF_Q4_2013)[1]` unique cases.
+
+### patient_age_group
+
+```{r, echo=TRUE}
+levels(PUF_Q4_2013$patient_age_group)[2] <- "1-18"
+levels(PUF_Q4_2013$patient_age_group)[1] <- NA
+PUF_Q4_2013$patient_age_group <- factor(PUF_Q4_2013$patient_age_group,
+                levels(PUF_Q4_2013$patient_age_group)[c(2:6,1)])
+missing <- sum(is.na(PUF_Q4_2013$patient_age_group))
+PUF_Q4_2013 <- PUF_Q4_2013[complete.cases(PUF_Q4_2013$patient_age_group),]
+
+```
+
+Patient age group (*patient_age_group*) is a factor with `r length(levels(PUF_Q4_2013$patient_age_group))` levels: `r levels(PUF_Q4_2013$patient_age_group)`; it has `r missing` missing values, leaving `r dim(PUF_Q4_2013)[1]` unique cases.  
+
+(Missing values were initially coded as -1, which we recoded as NA and removed as a level; we corrected the miscoding from "18-Jan"" to "1-18").
+
+### patient_sex
+
+```{r}
+PUF_Q4_2013$patient_sex <- 
+  as.factor(PUF_Q4_2013$patient_sex)
+
+levels(PUF_Q4_2013$patient_sex)[1] <- NA
+levels(PUF_Q4_2013$patient_sex)[1] <- "female"
+levels(PUF_Q4_2013$patient_sex)[2] <- "male"
+missing <- sum(is.na(PUF_Q4_2013$patient_sex))
+PUF_Q4_2013 <- PUF_Q4_2013[complete.cases(PUF_Q4_2013$patient_sex),]
+```
+
+Patient gender (*patient_sex*) is recoded as factor with the two levels `r levels(PUF_Q4_2013$patient_sex)` and `r missing` NAs, which are removed from the dataset, leaving `r dim(PUF_Q4_2013)[1]` unique cases.
+
+### in_or_out_patient
+
+```{r}
+PUF_Q4_2013$in_or_out_patient <- 
+  as.factor(PUF_Q4_2013$in_or_out_patient)
+
+levels(PUF_Q4_2013$in_or_out_patient)[1] <- NA
+levels(PUF_Q4_2013$in_or_out_patient)[1] <- "Outpatient"
+levels(PUF_Q4_2013$in_or_out_patient)[2] <- "Inpatient"
+```
+
+
+in- or outpatient status (*in_or_out_patient*) is recoded as a factor with the two levels `r levels(PUF_Q4_2013$in_or_out_patient)` and `r sum(is.na(PUF_Q4_2013$in_or_out_patient))` NAs, which are too numerous to exclude.
+
+### surgical_cpt code
+
+```{r}
+PUF_Q4_2013$surgical_cpt <- 
+  as.factor(PUF_Q4_2013$surgical_cpt)
+levels(PUF_Q4_2013$surgical_cpt)[1] <- NA
+missing <- sum(is.na(PUF_Q4_2013$surgical_cpt))
+```
+
+We considered to control with a random effect for *surgical_ctp* code but `r missing` cases do not have a *surgical_ctp* code defined, which are too many to exclude.
+
+### combined_cpt code
+
+```{r}
+PUF_Q4_2013$combined_cpt <- 
+  as.factor(PUF_Q4_2013$combined_cpt)
+levels(PUF_Q4_2013$combined_cpt)[1] <- NA
+missing <- sum(is.na(PUF_Q4_2013$combined_cpt))
+```
+
+We considered to control with a random effect for *combined_cpt* code but `r missing` cases do not have a *combined_cpt* code defined, which are too many to exclude.
+
+### reported_anesthesia_code
+
+```{r}
+PUF_Q4_2013$reported_anesthesia_code <- 
+  as.factor(PUF_Q4_2013$reported_anesthesia_code)
+levels(PUF_Q4_2013$reported_anesthesia_code)[1] <- NA
+missing <- sum(is.na(PUF_Q4_2013$reported_anesthesia_code))
+```
+
+We considered to control with a random effect for *reported_anesthesia_code* code but `r missing` cases do not have a *reported_anesthesia_code* code defined, which are too many to exclude.
+
+### primary_anesthesia_type
+
+```{r}
+PUF_Q4_2013$primary_anesthesia_type <- 
+  as.factor(PUF_Q4_2013$primary_anesthesia_type)
+levels(PUF_Q4_2013$primary_anesthesia_type)[1] <- NA
+levels(PUF_Q4_2013$primary_anesthesia_type) <- c("General", 
+                                                "Neuroaxial", 
+                                                "Regional", 
+                                                "MAC", 
+                                                "Sedation", "Local" , 
+                                                "Other")
+missing <- sum(is.na(PUF_Q4_2013$primary_anesthesia_type))
+PUF_Q4_2013 <- PUF_Q4_2013[complete.cases(PUF_Q4_2013$primary_anesthesia_type),]
+```
+
+*primary_anesthesia-type* is recoded as a factor with  `r length(levels(PUF_Q4_2013$primary_anesthesia_type))` levels [`r levels(PUF_Q4_2013$primary_anesthesia_type)`]. We considered to control with a fixed or a effect for *primary_anesthesia_type* code but `r missing` cases do not have a *primary_anesthesia_type* code defined, which may be too many to exclude.
+
+We did exclude NA leaving us with `r dim(PUF_Q4_2013)[1]` unique cases.
+
+### procedure_status
+
+```{r}
+PUF_Q4_2013$procedure_status <- 
+  as.factor(PUF_Q4_2013$procedure_status)
+levels(PUF_Q4_2013$procedure_status)[1] <- NA
+levels(PUF_Q4_2013$procedure_status) <- c("Emergency", "Elective")
+missing <- sum(is.na(PUF_Q4_2013$procedure_status))
+```
+
+It would make sense to try to control for *procedure_status*, (which indicates if the case was `r levels(PUF_Q4_2013$procedure_status) [1]` or `r levels(PUF_Q4_2013$procedure_status)[2]`); but `r missing` of the remaining cases do not have a *procedure_status* code defined, which obviously are too many to exclude.
+
+### case_type
+
+```{r}
+PUF_Q4_2013$case_type <- 
+  as.factor(PUF_Q4_2013$case_type)
+levels(PUF_Q4_2013$case_type)[1] <- NA
+missing <- sum(is.na(PUF_Q4_2013$case_type))
+```
+
+It would make sense to try to control for *case_type*, (which indicates if the case was `r levels(PUF_Q4_2013$case_type)` ..., but `r missing` of the remaining cases do not have a *case_type* code defined, which obviously are too many to exclude.
+
+### asaps_imputed
+
+```{r}
+PUF_Q4_2013$asaps_imputed <- 
+  as.factor(PUF_Q4_2013$asaps_imputed)
+levels(PUF_Q4_2013$asaps_imputed)[1] <- NA
+missing <- sum(is.na(PUF_Q4_2013$asaps_imputed))
+```
+
+### asaps
+
+```{r}
+PUF_Q4_2013$asaps <- 
+  as.factor(PUF_Q4_2013$asaps)
+levels(PUF_Q4_2013$asaps)[1] <- NA
+missing <- sum(is.na(PUF_Q4_2013$asaps))
+PUF_Q4_2013 <- PUF_Q4_2013[complete.cases(PUF_Q4_2013$asaps),]
+```
+
+It would make sense to try to control for *asaps* or *asaps_imputed*, (ASA Status, which indicates how sick a patient was, and only `r missing` of the remaining cases do not have an ASA status recorded; so we exclude them, leaving us with `r dim(PUF_Q4_2013)[1]` unique cases with also *asaps* as a predictor.
+
+### prov1
+
+```{r}
+PUF_Q4_2013$prov1 <- 
+  as.factor(PUF_Q4_2013$prov1)
+levels(PUF_Q4_2013$prov1)[1] <- NA
+missing <- sum(is.na(PUF_Q4_2013$prov1))
+```
+
+
+It would be great to control for individual provider behavior, to show variability among providers in their propensity to admister antiemetics contingent on insurance status. There are `r length(levels(PUF_Q4_2013$prov1))` different *prov1* levels, I believe they are coding for individual providers. `r missing` of the remaining cases do not have the *prov1*  recorded; if we exclude them, it leaves us with `r dim(PUF_Q4_2013[complete.cases(PUF_Q4_2013$prov1),])[1]` unique cases with provider coded as *prov1* as predictor.
+
+
+## Save cleaned datasets
+
+a dataset with the *Income_MedicanR* and individual provider as predictor is saved (after removing cases with *prov1* NA) in *prov1_Income_AQI_4_14.Rdata*
+
+
+```{r}
+# Remove cases with *prov* NA
+PUF_Q4_2013 <- PUF_Q4_2013[complete.cases(PUF_Q4_2013$prov1),]
+
+attach(PUF_Q4_2013)
+prov1_Income_AQI_4_14 <- data.frame(ond= ondansetron,
+                         dex= dexamethason,
+                         drop= droperidol,
+                         any = ondan_dex_either,
+                         inc =Income_MedianR,
+                         age = patient_age, 
+                         age_group = patient_age_group, 
+                         sex = patient_sex,
+                         ASA = asaps,
+                         duration = case_duration_minutes,
+                         anes_type = primary_anesthesia_type,
+                         prov = prov1,
+                         practice = practice)
+
+# all NA are already removed in the previous chunks
+
+save (prov1_Income_AQI_4_14, file="Analysis/Data/prov1_Income_AQI_4_14.Rdata")
+str(prov1_Income_AQI_4_14)
+```

@@ -1,0 +1,202 @@
+---
+  title: "LogLink Logistic regression AQI data"
+author: "Michael Andreae"
+date: "July, 24, 2015"
+output: pdf_document
+---
+  
+  # Insurance status predicts antiemetic use 
+  We investigate the Hypothesis that insurance status predicets antiemetic use the population in the Public Use File of the Anestehsia Quality Institute with electronic anesthesia records recording antiemetic use.
+
+
+
+```{r, packages, message=FALSE, echo=FALSE, warning=FALSE}
+library(knitr) # required to set options in Markdown R
+# library(lme4)
+# library(nlme)
+```
+
+
+
+```{r, global_options, echo=FALSE}
+
+# set the directory to the project directory
+setwd("C:/Users/Micheal/Dropbox/Professional/AQI/AQI_RegressionAnalysis")
+
+# set options
+opts_chunk$set(fig.width=6, fig.height=4, fig.path='Figs/',
+               echo=FALSE, warning=FALSE, message=FALSE)
+```
+
+## Load cleaned dataset *fullAQI_4_14* and *prov1_AQI_4_14*
+
+we load the cleaned larger dataset without and with provider information *fullAQI_4_14.Rdata*, *prov1_AQI_4_14*, which we generated in *import_AQI_14Jul2015.Rmd*   
+  
+  
+  ```{r, load_clean_dataset, echo=TRUE}
+rm(list = ls())
+load("Analysis/Data/fullAQI_4_14.Rdata")
+load("Analysis/Data/prov1_AQI_4_14.Rdata")
+str(fullAQI_4_14)
+str(prov1_AQI_4_14)
+
+```
+
+## Logistic Model 2 Link : log with glm
+
+We try to fit a logistic regression model with the a **log** link with the 
+
+formula <- ond ~ pay +age_group +sex +ASA +anes_type +duration +practice  
+
+### Problem: 
+We are unable to fit a log link model with all predictors, because we get the error message:
+  
+  *Error: no valid set of coefficients has been found: please supply starting values*
+  
+  if we use more predictors than a few predictors. Two solutions:
+  
+  * supply starting values for all coefficients, (factors need one for each level)
+* consider using the package *biglm*, specifically for log link with large data set
+
+## Building Loglink with starting values 
+
+Use estimated coefficients as **starting values** for increasingly complex model with one additional predictor per step. Starting values for additional predictors are set to zero.
+
+### Estimate fit_log0 with **four** predictors: 
+
+formula0 <- ond ~ pay +age_group +sex
+
+```{r, log0, echo=TRUE}
+
+formula0 <- ond ~ pay +age_group +sex
+
+fit_log0 <- glm(formula0, 
+                family = binomial(link = "log"), 
+                data = fullAQI_4_14)
+```
+
+
+```{r log0_results, eval=TRUE}
+p_values <- summary.glm((fit_log0))$coefficient[,4]
+OR <- exp(coef(fit_log0)) # exponentiated coefficients 
+# CI_fitlog<- confint(fit_log) # 95% CI for the coefficients, takes too long
+kable(data.frame(OR, p_values), digits = 3, caption = "Results log0")
+```
+
+### Estimate fit_log1 with **five** predictors: 
+
+formula1 <- ond ~ pay +age_group +sex +ASA
+
+```{r, log1, echo=TRUE}
+formula1 <- ond ~ pay +age_group +sex +ASA # one additonal predictor ASA
+
+fit_log1 <- glm(formula1, 
+                family = binomial(link = "log"), 
+                data = fullAQI_4_14, start = c(coef(fit_log0),rep(0,5) ))
+# start = c( coef(fit_log0), rep(0,5) ) ### For each level of ASA one start value!
+```
+
+```{r log1_results, eval=TRUE}
+p_values <- summary.glm((fit_log1))$coefficient[,4]
+OR <- exp(coef(fit_log1)) # exponentiated coefficients 
+# CI_fitlog<- confint(fit_log) # 95% CI for the coefficients, takes too long
+kable(data.frame(OR, p_values), digits = 3 , caption = "Results log1")
+```
+
+### Estimate fit_log2 with **six** predictors: 
+
+formula2 <- ond ~ pay +age_group +sex +ASA +anes_type 
+
+```{r, log2, echo=TRUE}
+formula2 <- ond ~ pay +age_group +sex +ASA +anes_type 
+
+fit_log2 <- glm(formula2, 
+                family = binomial(link = "log"), 
+                data = fullAQI_4_14, start = c(coef(fit_log1),rep(0,5) ))
+```
+
+```{r log2_results, eval=TRUE}
+p_values <- summary.glm((fit_log2))$coefficient[,4]
+OR <- exp(coef(fit_log2)) # exponentiated coefficients 
+# CI_fitlog<- confint(fit_log) # 95% CI for the coefficients, takes too long
+kable(data.frame(OR, p_values), digits = 3, , caption = "Results log2")
+```
+
+### Estimate fit_log3 with **seven** predictors: 
+
+formula3 <- ond ~ pay +age_group +sex +ASA +anes_type +duration
+
+```{r, log3, echo=TRUE}
+formula3 <- ond ~ pay +age_group +sex +ASA +anes_type +duration
+
+fit_log3 <- glm(formula3, 
+                family = binomial(link = "log"), 
+                data = fullAQI_4_14, start = c(coef(fit_log2),rep(0,1) ))
+```
+
+```{r log3_results, eval=TRUE}
+summary(fit_log3)
+p_values <- summary.glm((fit_log3))$coefficient[,4]
+OR <- exp(coef(fit_log3)) # exponentiated coefficients 
+# CI_fitlog<- confint(fit_log) # 95% CI for the coefficients, takes too long
+kable(data.frame(OR, p_values), digits = 3, caption = "Results log3")
+```
+
+### Check dispersion for fit_log3
+
+```{r checkdispersion, echo=TRUE, eval=TRUE}
+
+fit_log3quasi <- glm(formula3, 
+                     family = quasibinomial(link = "log"), 
+                     data = fullAQI_4_14, start = c(coef(fit_log2),rep(0,1) ))
+summary(fit_log3quasi)
+```
+
+##### Result
+
+(Dispersion parameter for quasibinomial family taken to be 1.000397)
+
+```{r diagnostics, eval=FALSE, echo=FALSE}
+mydata <- fullAQI_4_14
+z <-  fit_log3
+summary(z)                  # parameter estimates and overall model fit
+plot(z)                     # plots of deviance residuals, q-q, leverage
+coef(z)                     # model coefficients
+resid(z)                    # deviance residuals
+predict(z)                  # predicted values on the transformed scale
+predict(z, se.fit = TRUE)   # Includes SE's of predicted values
+fitted(z)                   # predicted values on the original scale
+
+plot(jitter(residuals(z), amount = 0.05) ~ predict(z))
+
+lines(lowess(x, y), data = mydata)
+```
+
+### Estimate fit_log4 with **seven** predictors: 
+
+formula4 <- ond ~ pay +age_group +sex +ASA +anes_type +duration +practice
+
+```{r, log4, echo=TRUE, eval=FALSE}
+formula4 <- ond ~ pay +age_group +sex +ASA +anes_type +duration +practice
+
+fit_log4 <- glm(formula4, 
+                family = binomial(link = "log"), 
+                data = fullAQI_4_14, start = c(coef(fit_log3), rep (0,3) ) )
+```
+
+**Non convergence**
+  *Warning messages:
+  1: step size truncated due to divergence 
+2: step size truncated due to divergence 
+3: step size truncated due to divergence 
+4: step size truncated due to divergence 
+5: glm.fit: algorithm did not converge*
+  
+  ```{r eval=FALSE}
+p_values <- summary.glm((fit_log))$coefficient[,4]
+OR <- exp(coef(fit_log)) # exponentiated coefficients
+CI_fitlog<- confint(fit_log) # 95% CI for the coefficients
+kable(data.frame(OR, exp(CI_fitlog), 
+                 p_values), digits = 3)
+```
+

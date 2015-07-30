@@ -1,0 +1,131 @@
+---
+title: "Random Effects LogLink Logistic regression AQI data"
+author: "Michael Andreae"
+date: "July, 24, 2015"
+output: pdf_document
+---
+
+# Insurance status predicts antiemetic use 
+We investigate the Hypothesis that insurance status predicets antiemetic use the population in the Public Use File of the Anestehsia Quality Institute with electronic anesthesia records recording antiemetic use.
+
+
+
+```{r, packages, message=FALSE, echo=FALSE, warning=FALSE}
+library(knitr) # required to set options in Markdown R
+library(lme4)
+# library(nlme)
+```
+
+
+
+```{r, global_options, echo=FALSE}
+
+# set the directory to the project directory
+setwd("C:/Users/Micheal/Dropbox/Professional/AQI/AQI_RegressionAnalysis")
+
+# set options
+opts_chunk$set(fig.width=6, fig.height=4, fig.path='Figs/',
+               echo=FALSE, warning=FALSE, message=FALSE)
+```
+
+## Load cleaned dataset *fullAQI_4_14* and *prov1_AQI_4_14*
+ 
+we load the cleaned larger dataset without and with provider information *fullAQI_4_14.Rdata*, *prov1_AQI_4_14*, which we generated in *import_AQI_14Jul2015.Rmd*   
+
+
+```{r, load_clean_dataset, echo=TRUE}
+rm(list = ls())
+load("Analysis/Data/fullAQI_4_14.Rdata")
+load("Analysis/Data/prov1_AQI_4_14.Rdata")
+str(fullAQI_4_14)
+str(prov1_AQI_4_14)
+
+```
+
+# Logistic Model 3 Link : log, random effects 
+
+We try to fit a **mixed effects** logistic regression model with the a **log** link, using with glmer (lme4 package), with the 
+
+formula <- ond ~ pay +age_group +sex +ASA +anes_type +duration +practice  
+
+**plus** additional random effects for practice and provider
+
+
+## Estimate with **one** (random) predictors: 
+
+### Random effect provider
+
+```{r, log0, eval = FALSE, echo=TRUE}
+
+formula0 <- ond ~ pay + provider +(1|provider)
+
+system.time( fit_log0 <- glmer(formula0, 
+             family = binomial(link = "log"), 
+             data = prov1_AQI_4_14)
+             )
+# system.time(for(i in 1:100) mad(runif(1000)))
+summary(fit_log0)
+fit_log0@beta
+```
+
+Error message:
+*Error: (maxstephalfit) PIRLS step-halvings failed to reduce deviance in pwrssUpdate
+*
+
+### Random effect provider LOGIT link
+
+```{r, logit0, eval = FALSE, echo=TRUE}
+
+formula_logit0 <- ond ~ pay + provider +(1|provider)
+
+system.time( fit_logit0 <- glmer(formula_logit0, 
+             family = binomial(link = "logit"), 
+             data = prov1_AQI_4_14)
+             )
+# system.time(for(i in 1:100) mad(runif(1000)))
+summary(fit_log0)
+fit_log0@beta
+```
+
+**Timout**
+
+### Random effect practice, fixed effect practice included
+
+```{r, log0_practice, echo=TRUE}
+
+formula0_practice <- ond ~ pay + practice +(1|practice)
+
+system.time( fit_log0_practice <- glmer(formula0_practice, 
+             family = binomial(link = "log"), 
+             data = prov1_AQI_4_14)
+             )
+summary(fit_log0_practice)
+fit_log0_practice@beta
+```
+
+The random effect for the intercept of practice has zero variance. We omit the fixed effect practice in the model *log1_practice* below.
+
+### Random effect practice, without fixed effect practice
+
+```{r, log1_practice, echo=TRUE}
+
+formula1_practice <- ond ~ pay +(1|practice)
+
+system.time( fit_log1_practice <- glmer(formula1_practice, 
+             family = binomial(link = "log"), 
+             data = prov1_AQI_4_14)
+             )
+summary(fit_log1_practice)
+fit_log1_practice@beta
+```
+
+
+```{r log0_results, eval=FALSE, echo=FALSE}
+#p_values <- summary.glm((fit_log0))$coefficient[,4]
+OR <- exp(fit_log0_practice@beta) # exponentiated coefficients 
+# CI_fitlog<- confint(fit_log) # 95% CI for the coefficients, takes too long
+kable(data.frame(OR, digits = 3, caption = "Results log0"))
+```
+
+
+
