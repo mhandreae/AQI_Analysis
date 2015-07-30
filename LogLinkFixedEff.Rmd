@@ -1,5 +1,5 @@
 ---
-  title: "LogLink Logistic regression AQI data"
+title: "LogLink Logistic regression AQI data"
 author: "Michael Andreae"
 date: "July, 24, 2015"
 output: pdf_document
@@ -21,7 +21,7 @@ library(knitr) # required to set options in Markdown R
 ```{r, global_options, echo=FALSE}
 
 # set the directory to the project directory
-setwd("C:/Users/Micheal/Dropbox/Professional/AQI/AQI_RegressionAnalysis")
+setwd("C:/Users/Micheal/Dropbox/Professional/AQI/AQI_Analysis")
 
 # set options
 opts_chunk$set(fig.width=6, fig.height=4, fig.path='Figs/',
@@ -33,7 +33,7 @@ opts_chunk$set(fig.width=6, fig.height=4, fig.path='Figs/',
 we load the cleaned larger dataset without and with provider information *fullAQI_4_14.Rdata*, *prov1_AQI_4_14*, which we generated in *import_AQI_14Jul2015.Rmd*   
   
   
-  ```{r, load_clean_dataset, echo=TRUE}
+```{r, load_clean_dataset, echo=TRUE}
 rm(list = ls())
 load("Analysis/Data/fullAQI_4_14.Rdata")
 load("Analysis/Data/prov1_AQI_4_14.Rdata")
