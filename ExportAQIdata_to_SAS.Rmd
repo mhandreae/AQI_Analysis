@@ -1,0 +1,72 @@
+---
+title: "Export AQI to SAS"
+author: "Michael Andreae"
+date: "July 30, 2015"
+output: pdf_document
+---
+
+```{r, packages, message=FALSE, echo=FALSE, warning=FALSE}
+library(knitr) # required to set options in Markdown R
+```
+
+
+```{r, global_options, echo=FALSE}
+
+# set the directory to the project directory
+setwd("C:/Users/Micheal/Dropbox/Professional/AQI/AQI_Analysis")
+
+# set options
+opts_chunk$set(fig.width=6, fig.height=4, fig.path='Figs/',
+               echo=FALSE, warning=FALSE, message=FALSE)
+```
+
+# Export to SAS from R
+
+We want to export the cleaned *fullAQI_4_14.Rdata* to SAS
+
+## AQI data
+
+### Load Data
+
+```{r load_AQI, echo=TRUE}
+rm(list = ls())
+load("Analysis/Data/fullAQI_4_14.Rdata")
+```
+
+### Export to SAS
+
+```{r export_AQI, echo=TRUE}
+ls()
+mytable <- head(fullAQI_4_14)
+kable(mytable)
+library(foreign)
+write.dbf(fullAQI_4_14,"fullAQI_4_14.dbf")
+dir(pattern="fullAQI_4_14.dbf")
+```
+
+## Example from Internet
+from http://www.r-bloggers.com/example-7-10-get-data-from-r-into-sas/
+
+### Load data
+
+```{r load_example, eval=FALSE, echo=TRUE}
+ds <- read.csv("http://www.math.smith.edu/sasr/datasets/helpmiss.csv")
+attach(ds)
+long <- reshape(ds, idvar="id", 
+    varying=list(c("cesd1","cesd2","cesd3","cesd4")),
+    v.names="cesdtv", timevar="visit", direction="long")
+attach(long)
+tosas <- data.frame(id, visit, cesdtv)
+head(tosas[order(id, visit),])
+```
+
+### Export to SAS 
+
+```{r export_example, eval=FALSE, echo=TRUE}
+
+library(foreign)
+write.dbf(tosas,"tosas.dbf")
+dir()
+```
+
+
