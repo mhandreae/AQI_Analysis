@@ -57,9 +57,10 @@ formula <- ond ~ pay +age_group +sex +ASA +anes_type +duration +practice
 
 ```{r, log0, eval = FALSE, echo=TRUE}
 
-formula0 <- ond ~ pay + provider +(1|provider)
+formula0 <- ond ~ pay +(1|provider)
 
-system.time( fit_log0 <- glmer(formula0, 
+system.time( 
+            fit_log0 <- glmer(formula0, 
              family = binomial(link = "log"), 
              data = prov1_AQI_4_14)
              )
@@ -68,6 +69,9 @@ summary(fit_log0)
 fit_log0@beta
 ```
 
+##### Non-Convergence
+
+With and without fixed effects for provider I get the error message
 Error message:
 *Error: (maxstephalfit) PIRLS step-halvings failed to reduce deviance in pwrssUpdate
 *
@@ -76,14 +80,14 @@ Error message:
 
 ```{r, logit0, eval = FALSE, echo=TRUE}
 
-formula_logit0 <- ond ~ pay + provider +(1|provider)
+formula_logit0 <- ond ~ pay  +(1|provider)
 
 system.time( fit_logit0 <- glmer(formula_logit0, 
              family = binomial(link = "logit"), 
              data = prov1_AQI_4_14)
              )
 # system.time(for(i in 1:100) mad(runif(1000)))
-summary(fit_log0)
+summary(fit_logit0)
 fit_log0@beta
 ```
 
