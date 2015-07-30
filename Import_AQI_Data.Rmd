@@ -18,7 +18,7 @@ library(knitr) # required to set options in Markdown R
 ```{r, global_options, echo=FALSE}
 
 # set the directory to the project directory
-setwd("C:/Users/Micheal/Dropbox/Professional/AQI/AQI_RegressionAnalysis")
+setwd("C:/Users/Micheal/Dropbox/Professional/AQI/AQI_Analysis")
 
 # set options
 opts_chunk$set(fig.width=6, fig.height=4, fig.path='Figs/',

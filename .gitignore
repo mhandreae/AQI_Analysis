@@ -44,3 +44,5 @@ Temporary Items
 .Rproj.user
 *.Rhistory
 *.Rdata
+*.csv
+*.pdf
