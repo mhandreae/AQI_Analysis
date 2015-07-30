@@ -50,10 +50,11 @@ formula <- ond ~ pay +age_group +sex +ASA +anes_type +duration +practice
 
 **plus** additional random effects for practice and provider
 
+# Random effect provider
 
-## Estimate with **one** (random) predictors: 
+## Log Link
 
-### Random effect provider
+Estimate with **one** (random) intercept: 
 
 ```{r, log0, eval = FALSE, echo=TRUE}
 
@@ -76,9 +77,11 @@ Error message:
 *Error: (maxstephalfit) PIRLS step-halvings failed to reduce deviance in pwrssUpdate
 *
 
-### Random effect provider LOGIT link
+## LOGIT link
 
-```{r, logit0, eval = FALSE, echo=TRUE}
+### Random intercept provider: 
+
+```{r, logit0, eval = TRUE, echo=TRUE}
 
 formula_logit0 <- ond ~ pay  +(1|provider)
 
@@ -88,12 +91,63 @@ system.time( fit_logit0 <- glmer(formula_logit0,
              )
 # system.time(for(i in 1:100) mad(runif(1000)))
 summary(fit_logit0)
-fit_log0@beta
 ```
 
-**Timout**
+### Random intercept nested provider| in practice: 
 
-### Random effect practice, fixed effect practice included
+```{r, eval = FALSE, echo=TRUE}
+
+formula_logit <- ond ~ pay  +(provider|practice)
+
+system.time( fit_logit <- glmer(formula_logit, 
+             family = binomial(link = "logit"), 
+             data = prov1_AQI_4_14)
+             )
+# system.time(for(i in 1:100) mad(runif(1000)))
+summary(fit_logit)
+```
+
+Error message
+
+*Error in if (ctrl$npt > (2 * n + 1)) warning("Setting npt > 2 * length(par) + 1 is not recommended.") : 
+  missing value where TRUE/FALSE needed*
+  
+**Really, I do not understand this well enough to do this complicated model.**
+
+Try instead to include more predictors
+
+
+### Random intercept provider + sex: 
+
+```{r, logit1, eval = TRUE, echo=TRUE}
+
+formula_logit1 <- ond ~ pay + sex  +(1|provider)
+
+system.time( fit_logit1 <- glmer(formula_logit1, 
+             family = binomial(link = "logit"), 
+             data = prov1_AQI_4_14)
+             )
+# system.time(for(i in 1:100) mad(runif(1000)))
+summary(fit_logit1)
+```
+
+### Random intercept provider + sex +age_group: 
+
+```{r, logit2, eval = FALSE, echo=TRUE}
+
+formula_logit2 <- ond ~ pay + sex  +age_group +(1|provider)
+
+system.time( fit_logit2 <- glmer(formula_logit2, 
+             family = binomial(link = "logit"), 
+             data = prov1_AQI_4_14)
+             )
+# system.time(for(i in 1:100) mad(runif(1000)))
+summary(fit_logit2)
+```
+
+##### Non-Convergence
+
+## Random effect practice, fixed effect practice included
 
 ```{r, log0_practice, echo=TRUE}
 
