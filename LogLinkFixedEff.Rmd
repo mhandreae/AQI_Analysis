@@ -213,6 +213,11 @@ fit_logit0 <- glm(formula0,
 
 ```{r logit0_results, eval=TRUE}
 summary(fit_logit0)
+
+p_values <- summary.glm((fit_logit0))$coefficient[,4]
+OR <- exp(coef(fit_logit0)) # exponentiated coefficients 
+# CI_fitlog<- confint(fit_log) # 95% CI for the coefficients, takes too long
+kable(data.frame(OR, p_values), digits = 3, caption = "Results logit0")
 ```
 
 ### Estimate fit_log1 with **four** predictors: 
@@ -230,6 +235,11 @@ fit_logit1 <- glm(formula1,
 
 ```{r logit1_results, eval=TRUE}
 summary(fit_logit1)
+p_values <- summary.glm((fit_logit1))$coefficient[,4]
+OR <- exp(coef(fit_logit1)) # exponentiated coefficients 
+# CI_fitlog<- confint(fit_logit1) 
+# 95% CI for the coefficients, takes too long
+kable(data.frame(OR, p_values), digits = 3, caption = "Results logit1")
 ```
 
 ### Estimate fit_log2 with **five** predictors: 
@@ -246,6 +256,11 @@ fit_logit2 <- glm(formula2,
 
 ```{r logit2_results, eval=TRUE}
 summary(fit_logit2)
+p_values <- summary.glm((fit_logit2))$coefficient[,4]
+OR <- exp(coef(fit_logit2)) # exponentiated coefficients 
+# CI_fitlog<- confint(fit_logit1) 
+# 95% CI for the coefficients, takes too long
+kable(data.frame(OR, p_values), digits = 3, caption = "Results logit2")
 ```
 
 ### Estimate fit_log3 with **six** predictors: 
@@ -262,21 +277,12 @@ fit_logit3 <- glm(formula3,
 
 ```{r logit3_results, eval=TRUE}
 summary(fit_logit3)
+p_values <- summary.glm((fit_logit3))$coefficient[,4]
+OR <- exp(coef(fit_logit3)) # exponentiated coefficients 
+# CI_fitlog<- confint(fit_logit1) 
+# 95% CI for the coefficients, takes too long
+kable(data.frame(OR, p_values), digits = 3, caption = "Results logit3")
 ```
-
-### Check dispersion for fit_log3
-
-```{r checkdispersion_logit, echo=TRUE, eval=TRUE}
-
-fit_logit3quasi <- glm(formula3, 
-                     family = quasibinomial(link = "logit"), 
-                     data = fullAQI_4_14, start = c(coef(fit_logit2),rep(0,1) ))
-summary(fit_logit3quasi)
-```
-
-##### Result
-
-(Dispersion parameter for quasibinomial family taken to be 1.000397)
 
 ### Estimate fit_log4 with **seven** predictors: 
 
@@ -288,8 +294,29 @@ formula4 <- ond ~ pay +age_group +sex +ASA +anes_type +duration +practice
 fit_logit4 <- glm(formula4, 
                 family = binomial(link = "logit"), 
                 data = fullAQI_4_14, start = c(coef(fit_logit3), rep (0,3) ) )
+```
+
+```{r results_logit4, eval=TRUE, echo=TRUE}
 summary(fit_logit4)
+p_values <- summary.glm((fit_logit4))$coefficient[,4]
+OR <- exp(coef(fit_logit4)) # exponentiated coefficients 
+# CI_fitlog<- confint(fit_logit1) 
+# 95% CI for the coefficients, takes too long
+kable(data.frame(OR, p_values), digits = 3, caption = "Results logit4")
 ```
 
 **Convergence**
-  
+
+### Check dispersion for fit_log3
+
+```{r checkdispersion_logit, echo=TRUE, eval=TRUE}
+fit_logit4quasi <- glm(formula4, 
+                family = quasibinomial(link = "logit"), 
+                data = fullAQI_4_14, start = c(coef(fit_logit3), rep (0,3) ) )
+
+summary(fit_logit4quasi)
+```
+
+##### Result
+
+Dispersion parameter for quasibinomial family taken to be 1.043756, hence no overdispersion demonstrated.
