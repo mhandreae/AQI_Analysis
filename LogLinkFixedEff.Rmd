@@ -79,10 +79,15 @@ fit_log0 <- glm(formula0,
 
 
 ```{r log0_results, eval=TRUE}
+summary(fit_log0)
 p_values <- summary.glm((fit_log0))$coefficient[,4]
-OR <- exp(coef(fit_log0)) # exponentiated coefficients 
+Coef <- coef(fit_log0) # coefficients 
+ExpCoef <- exp(coef(fit_log0)) # exponentiated coefficients 
 # CI_fitlog<- confint(fit_log) # 95% CI for the coefficients, takes too long
-kable(data.frame(OR, p_values), digits = 3, caption = "Results log0")
+kable(data.frame(Coef, 
+                 ExpCoef, 
+                 p_values), 
+      digits = 3, caption = "Results log0")
 ```
 
 ### Estimate fit_log1 with **four** predictors: 
@@ -99,10 +104,15 @@ fit_log1 <- glm(formula1,
 ```
 
 ```{r log1_results, eval=TRUE}
+summary(fit_log1)
 p_values <- summary.glm((fit_log1))$coefficient[,4]
-OR <- exp(coef(fit_log1)) # exponentiated coefficients 
+Coef <- coef(fit_log1) # coefficients 
+ExpCoef <- exp(coef(fit_log1)) # exponentiated coefficients 
 # CI_fitlog<- confint(fit_log) # 95% CI for the coefficients, takes too long
-kable(data.frame(OR, p_values), digits = 3 , caption = "Results log1")
+kable(data.frame(Coef, 
+                 ExpCoef, 
+                 p_values), 
+      digits = 3, caption = "Results log1")
 ```
 
 ### Estimate fit_log2 with **five** predictors: 
@@ -118,10 +128,15 @@ fit_log2 <- glm(formula2,
 ```
 
 ```{r log2_results, eval=TRUE}
+summary(fit_log2)
 p_values <- summary.glm((fit_log2))$coefficient[,4]
-OR <- exp(coef(fit_log2)) # exponentiated coefficients 
+Coef <- coef(fit_log2) # coefficients 
+ExpCoef <- exp(coef(fit_log2)) # exponentiated coefficients 
 # CI_fitlog<- confint(fit_log) # 95% CI for the coefficients, takes too long
-kable(data.frame(OR, p_values), digits = 3, , caption = "Results log2")
+kable(data.frame(Coef, 
+                 ExpCoef, 
+                 p_values), 
+      digits = 3, caption = "Results log2")
 ```
 
 ### Estimate fit_log3 with **six** predictors: 
@@ -139,9 +154,13 @@ fit_log3 <- glm(formula3,
 ```{r log3_results, eval=TRUE}
 summary(fit_log3)
 p_values <- summary.glm((fit_log3))$coefficient[,4]
-OR <- exp(coef(fit_log3)) # exponentiated coefficients 
+Coef <- coef(fit_log3) # coefficients 
+ExpCoef <- exp(coef(fit_log3)) # exponentiated coefficients 
 # CI_fitlog<- confint(fit_log) # 95% CI for the coefficients, takes too long
-kable(data.frame(OR, p_values), digits = 3, caption = "Results log3")
+kable(data.frame(Coef, 
+                 ExpCoef, 
+                 p_values), 
+      digits = 3, caption = "Results log3")
 ```
 
 ### Check dispersion for fit_log3
