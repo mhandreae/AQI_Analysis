@@ -296,13 +296,21 @@ levels(PUF_Q4_2013$primary_anesthesia_type) <- c("General",
                                                 "MAC", 
                                                 "Sedation", "Local" , 
                                                 "Other")
+kable(mytable <- data.frame(n=summary(PUF_Q4_2013$primary_anesthesia_type)))
 missing <- sum(is.na(PUF_Q4_2013$primary_anesthesia_type))
-PUF_Q4_2013 <- PUF_Q4_2013[complete.cases(PUF_Q4_2013$primary_anesthesia_type),]
 ```
 
-*primary_anesthesia-type* is recoded as a factor with  `r length(levels(PUF_Q4_2013$primary_anesthesia_type))` levels [`r levels(PUF_Q4_2013$primary_anesthesia_type)`]. We considered to control with a fixed or a effect for *primary_anesthesia_type* code but `r missing` cases do not have a *primary_anesthesia_type* code defined, which may be too many to exclude.
+*primary_anesthesia-type* is recoded as a factor with  `r length(levels(PUF_Q4_2013$primary_anesthesia_type))` levels [`r levels(PUF_Q4_2013$primary_anesthesia_type)`] and `r missing` cases at this time do not have a *primary_anesthesia_type* code defined. We consider to control with a fixed or a effect for *primary_anesthesia_type* code. 
 
-We did exclude NA leaving us with `r dim(PUF_Q4_2013)[1]` unique cases.
+```{r}
+levels(PUF_Q4_2013$primary_anesthesia_type)[5:7] <- NA
+
+PUF_Q4_2013 <- PUF_Q4_2013[complete.cases(PUF_Q4_2013$primary_anesthesia_type),]
+kable(mytable <- data.frame(n=summary(PUF_Q4_2013$primary_anesthesia_type)))
+
+```
+
+We did exclude NA and sedation and local leaving us with `r dim(PUF_Q4_2013)[1]` unique cases.
 
 ### procedure_status
 
@@ -616,6 +624,8 @@ We considered to control with a random effect for *reported_anesthesia_code* cod
 ### primary_anesthesia_type
 
 ```{r}
+# load("Analysis/Data/PUF_Q4_2013.Rdata")
+
 PUF_Q4_2013$primary_anesthesia_type <- 
   as.factor(PUF_Q4_2013$primary_anesthesia_type)
 levels(PUF_Q4_2013$primary_anesthesia_type)[1] <- NA
@@ -625,13 +635,21 @@ levels(PUF_Q4_2013$primary_anesthesia_type) <- c("General",
                                                 "MAC", 
                                                 "Sedation", "Local" , 
                                                 "Other")
+kable(mytable <- data.frame(n=summary(PUF_Q4_2013$primary_anesthesia_type)))
 missing <- sum(is.na(PUF_Q4_2013$primary_anesthesia_type))
-PUF_Q4_2013 <- PUF_Q4_2013[complete.cases(PUF_Q4_2013$primary_anesthesia_type),]
 ```
 
-*primary_anesthesia-type* is recoded as a factor with  `r length(levels(PUF_Q4_2013$primary_anesthesia_type))` levels [`r levels(PUF_Q4_2013$primary_anesthesia_type)`]. We considered to control with a fixed or a effect for *primary_anesthesia_type* code but `r missing` cases do not have a *primary_anesthesia_type* code defined, which may be too many to exclude.
+*primary_anesthesia-type* is recoded as a factor with  `r length(levels(PUF_Q4_2013$primary_anesthesia_type))` levels [`r levels(PUF_Q4_2013$primary_anesthesia_type)`] and `r missing` cases at this time do not have a *primary_anesthesia_type* code defined. We consider to control with a fixed or a effect for *primary_anesthesia_type* code. 
 
-We did exclude NA leaving us with `r dim(PUF_Q4_2013)[1]` unique cases.
+```{r}
+levels(PUF_Q4_2013$primary_anesthesia_type)[5:7] <- NA
+
+PUF_Q4_2013 <- PUF_Q4_2013[complete.cases(PUF_Q4_2013$primary_anesthesia_type),]
+kable(mytable <- data.frame(n=summary(PUF_Q4_2013$primary_anesthesia_type)))
+
+```
+
+We did exclude NA and sedation and local leaving us with `r dim(PUF_Q4_2013)[1]` unique cases.
 
 ### procedure_status
 
