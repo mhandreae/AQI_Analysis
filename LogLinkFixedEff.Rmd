@@ -125,7 +125,7 @@ formula2 <- ond ~ pay +age_group +sex +ASA +anes_type
 
 fit_log2 <- glm(formula2, 
                 family = binomial(link = "log"), 
-                data = fullAQI_4_14, start = c(coef(fit_log1),rep(0,5) ))
+                data = fullAQI_4_14, start = c(coef(fit_log1),rep(0,3) ))
 ```
 
 ```{r log2_results, eval=TRUE}
@@ -307,7 +307,7 @@ formula2 <- ond ~ pay +age_group +sex +ASA +anes_type
 
 fit_logit2 <- glm(formula2, 
                 family = binomial(link = "logit"), 
-                data = fullAQI_4_14, start = c(coef(fit_logit1),rep(0,5) ))
+                data = fullAQI_4_14, start = c(coef(fit_logit1),rep(0,3) ))
 ```
 
 ```{r logit2_results, eval=TRUE}
