@@ -198,24 +198,6 @@ fit_log4 <- glm(formula4,
 4: step size truncated due to divergence 
 5: glm.fit: algorithm did not converge*
 
-# Diagnostics
-
-```{r diagnostics, eval=FALSE, echo=FALSE}
-mydata <- fullAQI_4_14
-z <-  fit_log3
-summary(z)                  # parameter estimates and overall model fit
-plot(z)                     # plots of deviance residuals, q-q, leverage
-coef(z)                     # model coefficients
-resid(z)                    # deviance residuals
-predict(z)                  # predicted values on the transformed scale
-predict(z, se.fit = TRUE)   # Includes SE's of predicted values
-fitted(z)                   # predicted values on the original scale
-
-plot(jitter(residuals(z), amount = 0.05) ~ predict(z))
-
-lines(lowess(x, y), data = mydata)
-```
-
 ## Hosmer-Lemeshow Goodness of Fit
 
 ### Function
